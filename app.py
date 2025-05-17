@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-import os
 
 app = Flask(__name__)
 app.secret_key = '453b6e15f8f145250cd8ee16915d79b2af94a504721bab44'  # Required for session
@@ -14,13 +13,14 @@ db = SQLAlchemy(app)
 #Define Task Model
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.string(200), nullable=False)
-    due_date = db.Column(db.string(50))
-    completed = db.column(db.Boolean, default=False)
+    name = db.Column(db.String(200), nullable=False)
+    due_date = db.Column(db.String(50))
+    completed = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    category = db.Column(db.String(50), default="other")
+    priority = db.Column(db.String(20), default="medium")
     def __repr__(self):
-        return f'<Task {self.name}'
+        return f'<Task {self.name}>'
 
 #Create Database Tables
 with app.app_context():
@@ -28,15 +28,39 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    tasks = Task.query.order_by(Task.created_at).all()
-    return render_template('index.html', tasks=tasks)
+    filter_type = request.args.get('filter', 'all')
+    sort_by = request.args.get('sort', 'date')
+    search_query = request.args.get('search', '')
+
+    query = Task.query
+
+    # Apply search filter if provided
+    if search_query:
+        query = query.filter(Task.name.contains(search_query))
+
+    # Apply task status filter
+    if filter_type == 'active':
+        query = query.filter_by(completed=False)
+    elif filter_type == 'completed':
+        query = query.filter_by(completed=True)
+
+    # Apply sorting
+    if sort_by == 'date':
+        query = query.order_by(Task.created_at)
+    elif sort_by == 'name':
+        query = query.order_by(Task.name)
+
+    tasks = query.all()
+    return render_template('index.html', tasks=tasks, filter=filter_type, sort=sort_by, search=search_query)
 
 @app.route('/add', methods=['POST'])
 def add():
     task_name = request.form.get('task_name')
     due_date = request.form.get('due_date')
+    category = request.form.get('category','other')
+    priority = request.form.get('priority','medium')
 
-    new_task = Task(name=task_name, due_date=due_date)
+    new_task = Task(name=task_name, due_date=due_date,category=category,priority=priority)
     db.session.add(new_task)
     db.session.commit()
 
