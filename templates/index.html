@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Progress Tracker</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .task { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .completed { background-color: #e8f5e9; text-decoration: line-through; }
+        form { margin: 20px 0; }
+        .actions { margin-top: 10px; }
+        .actions a { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Progress Tracker</h1>
+    
+    <form action="/add" method="post">
+        <input type="text" name="task_name" placeholder="Task name" required>
+        <input type="text" name="due_date" placeholder="Due date">
+        <button type="submit">Add Task</button>
+    </form>
+    
+    <h2>Your Tasks</h2>
+    {% if tasks %}
+        {% for task in tasks %}
+            <div class="task {% if task.completed %}completed{% endif %}">
+                <h3>{{ task.name }}</h3>
+                <p>Due: {{ task.due_date }}</p>
+                <div class="actions">
+                    {% if not task.completed %}
+                        <a href="/complete/{{ task.id }}">Mark as Complete</a>
+                    {% else %}
+                        <span>Completed</span>
+                    {% endif %}
+                    <a href="/delete/{{ task.id }}">Delete</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No tasks yet!</p>
+    {% endif %}
+</body>
+</html>
